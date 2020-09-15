@@ -1,11 +1,12 @@
 import React from 'react'
 import './layout.sass'
 import { AddClass } from '../../hoc/AddClass';
+import { Header } from '../header/Header';
 
 const Layout = () => {
     return (
         <div>
-            Шаблон
+            <Header/>
         </div>
     )
 }
