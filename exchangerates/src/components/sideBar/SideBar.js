@@ -13,7 +13,6 @@ export const SideBar = () => {
       <div className="sidebarContent">
         <ul>
           {Object.keys(state.currency).map(item => {
-              console.log(item);
             return (
               <li key={item}>
                 <p>

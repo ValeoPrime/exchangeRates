@@ -11,7 +11,7 @@ export const Exchange = () => {
         <div className="exchangeContent">
           <div>
             {" "}
-            <p>Базовая валюта: &nbsp; &nbsp;Дата: </p>
+            <p>Базовая валюта: {state.baseCurrency} &nbsp; &nbsp;Дата: {state.date} </p>
           </div>
 
           <ul>
