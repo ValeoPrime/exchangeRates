@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import "./App.sass";
 import Layout from "./components/layout/Layout";
 import RateContext from "./context/RateContext";
+import axios from "axios";
 import CHF from "./img/CHF.png";
 import CNY from "./img/CNY.png";
 import EUR from "./img/EUR.png";
@@ -31,6 +32,15 @@ export default class App extends Component {
       inputValue: 100,
       currencyValue: "USD",
       result: null,
+
+      //sample
+      sample: {
+        base: "USD",
+        base2: "RUB",
+        date: "2020-09-17",
+        course: "",
+      },
+      sampleList: {},
     };
   }
 
@@ -53,17 +63,103 @@ export default class App extends Component {
           });
         });
       });
+    axios("https://exchangerates-b8f45.firebaseio.com/sample.json").then(
+      (data) => {
+        console.log("Все выборки из базы", data.data);
+        this.setState({
+          sampleList: data.data,
+        });
+      }
+    );
   }
+
+  baseValueHandler = (event) => {
+    let sample = { ...this.state.sample };
+
+    sample.base = event.target.value;
+    this.setState({
+      sample: sample,
+    });
+  };
+
+  base2ValueHandler = (event) => {
+    let sample = { ...this.state.sample };
+
+    sample.base2 = event.target.value;
+    this.setState({
+      sample: sample,
+    });
+  };
+
+  sampleDateHandler = (event) => {
+    let sample = { ...this.state.sample };
+
+    sample.date = event.target.value;
+    this.setState({
+      sample: sample,
+    });
+  };
+
+  dataWrite = async () => {
+    console.log(this.state.sample.date);
+    await fetch(
+      `https://api.exchangeratesapi.io/${
+        this.state.sample.date
+      }?base=${this.state.sample.base}`
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        let sample = { ...this.state.sample };
+
+        sample.course = response.rates[this.state.sample.base2];
+        this.setState({
+          sample: sample,
+        });
+      });
+
+    await axios
+      .post(
+        "https://exchangerates-b8f45.firebaseio.com/sample.json",
+        this.state.sample
+      )
+      .then((response) => {
+        return "";
+      });
+
+    await axios("https://exchangerates-b8f45.firebaseio.com/sample.json").then(
+      (data) => {
+        console.log("Все выборки из базы", data.data);
+        this.setState({
+          sampleList: data.data,
+        });
+      }
+    );
+  };
+
+  sampleRemove = async (item) => {
+    let sampleList = { ...this.state.sampleList };
+    delete sampleList[item];
+    this.setState({
+      sampleList: sampleList,
+    });
+    await axios
+      .delete(`https://exchangerates-b8f45.firebaseio.com/sample/${item}.json`)
+      .then((response) => {
+        return ""
+      });
+  };
 
   inputValueHandler = (event) => {
     this.setState({
       inputValue: event.target.value,
+      result: null,
     });
   };
 
   currencyValueHandler = (event) => {
     this.setState({
       currencyValue: event.target.value,
+      result: null,
     });
   };
 
@@ -92,6 +188,11 @@ export default class App extends Component {
           inputValueHandler: this.inputValueHandler,
           currencyValueHandler: this.currencyValueHandler,
           calculatorHandler: this.calculatorHandler,
+          baseValueHandler: this.baseValueHandler,
+          base2ValueHandler: this.base2ValueHandler,
+          sampleDateHandler: this.sampleDateHandler,
+          dataWrite: this.dataWrite,
+          sampleRemove: this.sampleRemove,
         }}
       >
         <Layout />
