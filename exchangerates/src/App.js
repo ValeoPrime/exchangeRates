@@ -10,11 +10,46 @@ import GBP from "./img/GBP.png";
 import JPY from "./img/JPY.png";
 import RUB from "./img/RUB.png";
 import USD from "./img/USD.png";
+import { Darkmask } from "./components/darkMask/darkMask";
+import { Modal } from "./components/modal/Modal";
+import { Input } from "./components/input/Input";
+
+function validateEmail(email) {
+  const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 
 export default class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      formControls: {
+        email: {
+          value: "",
+          type: "email",
+          label: "Email",
+          errorMessage: "Введите корректный Email",
+          valid: false,
+          touched: false,
+          validationRulers: {
+            required: true,
+            email: true,
+          },
+        },
+        password: {
+          value: "",
+          type: "password",
+          label: "Пароль",
+          errorMessage: "Введите корректный Пароль",
+          valid: false,
+          touched: false,
+          validationRulers: {
+            required: true,
+            minLength: 6,
+          },
+        },
+      },
+
       baseCurrency: "USD",
       rate: "",
       date: "",
@@ -73,6 +108,67 @@ export default class App extends Component {
     );
   }
 
+  validateControl(value, validationRulers) {
+    if (!validationRulers) {
+      return true;
+    }
+
+    let isValid = true;
+
+    if (validationRulers.required) {
+      isValid = value.trim() !== "" && isValid;
+    }
+    if (validationRulers.email) {
+      isValid = validateEmail(value) && isValid;
+    }
+    if (validationRulers.minLength) {
+      isValid = value.length >= validationRulers.minLength && isValid;
+    }
+
+    return isValid;
+  }
+
+  onChangeHandler = (event, controlName) => {
+
+    const formControls = { ...this.state.formControls };
+    const control = { ...formControls[controlName] };
+
+    control.value = event.target.value;
+    control.touched = true;
+    control.valid = this.validateControl(
+      control.value,
+      control.validationRulers
+    );
+
+    formControls[controlName] = control;
+
+    this.setState({
+      formControls: formControls,
+    });
+  };
+
+  renderInputs = () => {
+    return Object.keys(this.state.formControls).map((controlName, i) => {
+      const control = this.state.formControls[controlName];
+      return (
+        <Input
+          key={controlName + i}
+          type={control.type}
+          value={control.value}
+          valid={control.valid}
+          touched={control.touched}
+          label={control.label}
+          errorMessage={control.errorMessage}
+          shouldValidate={true}
+          onChange={(event) => {
+            console.log("Вызов он чендж");
+            this.onChangeHandler(event, controlName);
+          }}
+        />
+      );
+    });
+  };
+
   baseValueHandler = (event) => {
     let sample = { ...this.state.sample };
 
@@ -103,9 +199,7 @@ export default class App extends Component {
   dataWrite = async () => {
     console.log(this.state.sample.date);
     await fetch(
-      `https://api.exchangeratesapi.io/${
-        this.state.sample.date
-      }?base=${this.state.sample.base}`
+      `https://api.exchangeratesapi.io/${this.state.sample.date}?base=${this.state.sample.base}`
     )
       .then((response) => response.json())
       .then((response) => {
@@ -145,7 +239,7 @@ export default class App extends Component {
     await axios
       .delete(`https://exchangerates-b8f45.firebaseio.com/sample/${item}.json`)
       .then((response) => {
-        return ""
+        return "";
       });
   };
 
@@ -193,8 +287,11 @@ export default class App extends Component {
           sampleDateHandler: this.sampleDateHandler,
           dataWrite: this.dataWrite,
           sampleRemove: this.sampleRemove,
+          renderInputs: this.renderInputs,
         }}
       >
+        <Darkmask />
+        <Modal />
         <Layout />
       </RateContext.Provider>
     );
